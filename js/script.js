@@ -1,34 +1,50 @@
-const testList = [
-	{x: 100, y: 100},
-	{x: 500, y: 500},
-	{x: 30, y: 30}
-]
+
 
 class Field {
 	constructor(node) {
 		this.list = [];
 		this.radius = 50;
-
+		this.moving = false;
 		//this.list = testList;
     this.node = document.querySelector(node);
-		//double click
-		//get distance to items in this.list
-		//if ev.target is circle remove it
-		  //else if getDistance is true create new Circle 
-		this.node.addEventListener('dblclick', () => {
-      
+    this.clickCoords = [];
+
+		this.node.addEventListener('dblclick', (ev) => {
+      const circles = Array.from(this.node.children);
+      if (circles.indexOf(ev.target) >= 0) {
+      	console.log(circles.indexOf(ev.target));
+      	this.node.removeChild(ev.target);
+      	this.list.splice(circles.indexOf(ev.target), 1);
+
+      } else {
+      	const x = ev.x;
+      	const y = ev.y;
+      	if (!this.validatePoint([x, y])) return;
+      	const newCircle = new Circle([x, y], this.radius, this.generateColor());
+      	this.list.push(newCircle);
+      	this.node.appendChild(this.renderCircle(newCircle));
+      }
 		});
 
 
-		//add circle to this
-		this.node.addEventListener('circle-added', (e) => {
-			this.list.push(e.detail.center);
+		this.node.addEventListener('mousedown', (ev) => {
+      const circles = Array.from(this.node.children);
+      if (circles.indexOf(ev.target) >= 0) {
+      	console.log([ev.x, ev.y]);
+      	this.moving = true;
+      	this.clickCoords = [ev.x, ev.y];
+      }
 		})
+		this.node.addEventListener('mousemove', (ev) => {
+			if (this.moving) {
+				const x = ev.x - this.clickCoords[0];
+				const y = ev.y - this.clickCoords[1];
+				console.log([x, y]);
 
-		//for moveable - mousedown and mouseup listeners
-		// 
-		this.node.addEventListener('mouseup', function() {
-      // 
+			}
+		})
+		this.node.addEventListener('mouseup', (ev) => {
+			this.moving = false;
 		})
 	}
 	init(numCircles, radius) {
@@ -45,50 +61,67 @@ class Field {
 		}
 	}
 
-  generatePoint(radius, coord, list) {
-  	let point = parseInt((Math.random() * (this.node.offsetWidth - (radius * 2))) + radius, 10);
-  	if (!this.getDistance(point, radius, coord, list)) {
 
-  		console.log('too close');
-  	  return this.generatePoint(radius, coord, list);
-  	}
-  	
-  	console.log('point ' + point + ' accepted');
-  	return point;
-  }
+	getRandomPoint(max) {
+		return parseInt((Math.random() * (this.node[max] - (this.radius * 2))) + this.radius, 10);
+	}
 
   generatePoints() {
-    const x = this.generatePoint(this.radius, 'x', this.list);
-    const y = this.generatePoint(this.radius, 'y', this.list);
+    const x = this.getRandomPoint('offsetWidth');
+    const y = this.getRandomPoint('offsetHeight');
+    if (!this.validatePoint([x, y])) {
+    	return this.generatePoints();
+    }
     return [x, y];
   }
 
   generateColor(color1, color2) {
-    //if no arguments, generate a hex color code 
-    return '#'+Math.floor(Math.random()*16777215).toString(16);
+  	const color = [];
+    let start = 0;
+    while (start < 3) {
+    	if (arguments.length === 0) {
+    		let randomNum = Math.floor(Math.random() * 256).toString(16);
+    		color.push(randomNum.length === 2 ? randomNum : '0' + randomNum);
+    	} else {
+    		color.push(Math.floor((color1[start] + color2[start]) / 2).toString(16));
+    	}
+    	
+    	start++;
+    }
+    return '#' + color.join('');
   }
 
-  getDistance(point, radius, coord, list) {
+  decodeHex(string) {
+  	const hex = string.split('');
+  	const colors = [];
+  	let temp = [];
+  	for (const i = 1; i < 7; i ++) {
+  		const isEven = i % 2 === 0
+  		if (!isEven) {
+  			temp = [];
+  		}
+  		temp.push(hex[i]);
+  		if (isEven) {
+  			colors.push(parseInt(temp.join(''), 16));
+  		}
+  	}
+  	return colors;
+  }
+
+  getDistance(coord1, coord2) {
+  	const x = Math.pow(coord2[0] - coord1[0], 2);
+  	const y = Math.pow(coord2[1] - coord1[1], 2);
+  	const result = Math.pow(x + y, 0.5);
+  	return result;
+  }
+
+  validatePoint(coords) {
   	let count = 0;
   	let letDraw = true;
   	
-    while (count < list.length ) {
-  		const noRightOffset = (list[count][coord] + radius) > (point - radius);
-
-  		const noLeftOffset = (list[count][coord] - radius) < (point + radius);
-
-  		if (noRightOffset && noLeftOffset) {
-  			// console.log('r ', noRightOffset);
-  		 //  console.log('l ', noLeftOffset)
-  		  console.log('distance ', list)
-  			console.log('point ', point);
-  			console.log('comparing against ' + list[count][coord]);
-  			// console.log('listEl + radius ', + list[count][coord] + radius)
-  			// console.log('listEl - radius ', + list[count][coord] - radius)
-  			// console.log('point- ', point - radius);
-  			// console.log('point+ ', point + radius);
-	  		// console.log('listEl + radius VS point - radius ', (list[count][coord] + radius) + ' ' + (point - radius));
-	  		// console.log('listEl - radius VS point + radius ', (list[count][coord] - radius) + ' ' + (point + radius))
+    while (count < this.list.length ) {
+  		const distance = this.getDistance(coords, [this.list[count].x, this.list[count].y]);
+  		if (distance < this.radius) {
   			letDraw = false;
   			break;
   		}
@@ -96,6 +129,7 @@ class Field {
   	}
   	return letDraw;
   }
+
   renderCircle(circle) {
   	const el = document.createElement('div');
 
@@ -106,7 +140,6 @@ class Field {
 		el.style.borderRadius = '50%';
 		el.style.left = (circle.x - (circle.radius / 2)) + 'px';
 		el.style.top = (circle.y - (circle.radius / 2)) + 'px';
-
 		return el;
   }
 }
@@ -117,21 +150,10 @@ class Circle {
 	  this.y = y;
 	  this.color = color;
 	  this.radius = radius;
-	  // return this.render();
-	  // this.addEventListener('mousedown', () => {
-
-	  // });
-
-	  // this.circleAdded = new customEvent('circle-added', {
-	  // 	bubbles: true,
-	  // 	detail: {
-	  // 		center: this.center,
-	  // 	}
-	  // })
 	}
 }
 n = new Field('.field');
-n.init(5, n.radius)
+n.init(10, n.radius)
 //m = new Circle([250, 150], 50, '#000');
 
 
