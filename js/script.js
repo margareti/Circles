@@ -1,5 +1,4 @@
 
-
 class Field {
 	constructor(node) {
 		this.list = [];
@@ -8,6 +7,9 @@ class Field {
 		//this.list = testList;
     this.node = document.querySelector(node);
     this.clickCoords = [];
+    this.movingEl;
+    this.leftOffset;
+    this.topOffset; 	
 
 		this.node.addEventListener('dblclick', (ev) => {
       const circles = Array.from(this.node.children);
@@ -32,19 +34,35 @@ class Field {
       if (circles.indexOf(ev.target) >= 0) {
       	console.log([ev.x, ev.y]);
       	this.moving = true;
+      	this.movingEl = ev.target;
       	this.clickCoords = [ev.x, ev.y];
       }
 		})
 		this.node.addEventListener('mousemove', (ev) => {
 			if (this.moving) {
+	
 				const x = ev.x - this.clickCoords[0];
 				const y = ev.y - this.clickCoords[1];
-				console.log([x, y]);
-
+				//console.log([x, y]);
+				//console.log([this.movingEl.style.left, this.movingEl.style.top]);
+        const newX = parseInt(this.movingEl.style.left ) + x;
+        const newY = parseInt(this.movingEl.style.top ) + y;
+        console.log('validate ', this.validatePoint([newX, newY]))
+				if (this.validatePoint([newX, newY])) {
+          this.leftOffset = newX + 'px';
+          this.topOffset = newY + 'px';
+        }
+				
 			}
 		})
 		this.node.addEventListener('mouseup', (ev) => {
 			this.moving = false;
+      if (this.leftOffset && this.topOffset) {
+        this.movingEl.style.left = this.leftOffset;
+        this.movingEl.style.top = this.topOffset;
+        this.leftOffset = null;
+        this.topOffset = null;
+      }
 		})
 	}
 	init(numCircles, radius) {
