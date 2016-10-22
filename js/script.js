@@ -4,12 +4,12 @@ class Field {
 		this.list = [];
 		this.radius = 50;
 		this.moving = false;
-		//this.list = testList;
+
     this.node = document.querySelector(node);
     this.clickCoords = [];
+
     this.movingEl;
-    this.leftOffset;
-    this.topOffset; 	
+    this.movingIdx;
 
 		this.node.addEventListener('dblclick', (ev) => {
       const circles = Array.from(this.node.children);
@@ -32,39 +32,41 @@ class Field {
 		this.node.addEventListener('mousedown', (ev) => {
       const circles = Array.from(this.node.children);
       if (circles.indexOf(ev.target) >= 0) {
-      	console.log([ev.x, ev.y]);
-      	this.moving = true;
       	this.movingEl = ev.target;
       	this.clickCoords = [ev.x, ev.y];
+        this.movingIdx = circles.indexOf(ev.target);
+        this.moving = true;
       }
 		})
 		this.node.addEventListener('mousemove', (ev) => {
-			if (this.moving) {
-	
-				const x = ev.x - this.clickCoords[0];
-				const y = ev.y - this.clickCoords[1];
-				//console.log([x, y]);
-				//console.log([this.movingEl.style.left, this.movingEl.style.top]);
-        const newX = parseInt(this.movingEl.style.left ) + x;
-        const newY = parseInt(this.movingEl.style.top ) + y;
-        console.log('validate ', this.validatePoint([newX, newY]))
-				if (this.validatePoint([newX, newY])) {
-          this.leftOffset = newX + 'px';
-          this.topOffset = newY + 'px';
-        }
-				
-			}
+      
 		})
 		this.node.addEventListener('mouseup', (ev) => {
-			this.moving = false;
-      if (this.leftOffset && this.topOffset) {
-        this.movingEl.style.left = this.leftOffset;
-        this.movingEl.style.top = this.topOffset;
-        this.leftOffset = null;
-        this.topOffset = null;
+      if (this.moving) {
+        this.moving = false;
+        console.log([ev.x, ev.y]);
+        const x = ev.x - this.clickCoords[0];
+        const y = ev.y - this.clickCoords[1];
+
+        const newX = parseInt(this.movingEl.style.left ) + x;
+        const newY = parseInt(this.movingEl.style.top ) + y;
+
+        const intersection = this.getIntersection([ev.x, ev.y], this.radius/2, this.movingIdx);
+        console.log(intersection)
+        if (intersection === false) {
+          this.movingEl.style.left = newX + 'px';
+          this.movingEl.style.top = newY + 'px';
+          this.clickCoords = [];
+
+          this.list[this.movingIdx].x = newX + (this.radius / 2);
+          this.list[this.movingIdx].y = newY + (this.radius / 2);
+        } else {
+          console.log(this.generateColor(this.decodeHex(this.list[this.movingIdx].color), this.decodeHex(this.list[intersection].color)));
+        }
       }
 		})
 	}
+
 	init(numCircles, radius) {
 		let start = numCircles;
 		while (start) {
@@ -113,7 +115,7 @@ class Field {
   	const hex = string.split('');
   	const colors = [];
   	let temp = [];
-  	for (const i = 1; i < 7; i ++) {
+  	for (let i = 1; i < 7; i ++) {
   		const isEven = i % 2 === 0
   		if (!isEven) {
   			temp = [];
@@ -133,16 +135,35 @@ class Field {
   	return result;
   }
 
+  getIntersection(coords, margin, escape = this.list.length){
+    let count = 0;
+    let intersectIdx = false;
+    while (count < this.list.length ) {
+      if (count !== escape) {
+        const distance = this.getDistance(coords, [this.list[count].x, this.list[count].y]);
+        console.log(distance);
+        if (distance < margin) {
+          intersectIdx = count;
+          break;
+        }
+      }
+      count++;
+    }
+    return intersectIdx;
+  }
+
   validatePoint(coords) {
   	let count = 0;
   	let letDraw = true;
-  	
     while (count < this.list.length ) {
-  		const distance = this.getDistance(coords, [this.list[count].x, this.list[count].y]);
-  		if (distance < this.radius) {
-  			letDraw = false;
-  			break;
-  		}
+      if (count !== escape) {
+        const distance = this.getDistance(coords, [this.list[count].x, this.list[count].y]);
+        console.log(distance);
+        if (distance < this.radius) {
+          letDraw = false;
+          break;
+        }
+      }
   		count++;
   	}
   	return letDraw;
@@ -171,7 +192,7 @@ class Circle {
 	}
 }
 n = new Field('.field');
-n.init(10, n.radius)
+n.init(2, n.radius)
 //m = new Circle([250, 150], 50, '#000');
 
 
