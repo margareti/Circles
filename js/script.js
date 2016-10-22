@@ -15,8 +15,8 @@ class Field {
       const circles = Array.from(this.node.children);
       if (circles.indexOf(ev.target) >= 0) {
       	console.log(circles.indexOf(ev.target));
-      	this.node.removeChild(ev.target);
-      	this.list.splice(circles.indexOf(ev.target), 1);
+
+        this.purgeCircle(ev.target, circles.indexOf(ev.target));
 
       } else {
       	const x = ev.x;
@@ -61,11 +61,24 @@ class Field {
           this.list[this.movingIdx].x = newX + (this.radius / 2);
           this.list[this.movingIdx].y = newY + (this.radius / 2);
         } else {
-          console.log(this.generateColor(this.decodeHex(this.list[this.movingIdx].color), this.decodeHex(this.list[intersection].color)));
+          const movingColorRGB = this.decodeHex(this.list[this.movingIdx].color);
+          const intersColorRGB = this.decodeHex(this.list[intersection].color);
+          const newColor = this.generateColor(movingColorRGB, intersColorRGB);
+          console.log(newColor);
+
+          this.movingEl.style.background = newColor;
+          this.list[this.movingIdx].x = newX + (this.radius / 2);
+          this.list[this.movingIdx].y = newY + (this.radius / 2);
+
         }
       }
 		})
 	}
+
+  purgeCircle(node, idx) {
+    this.node.removeChild(node);
+    this.list.splice(idx, 1);
+  }
 
 	init(numCircles, radius) {
 		let start = numCircles;
