@@ -14,10 +14,7 @@ class Field {
 		this.node.addEventListener('dblclick', (ev) => {
       const circles = Array.from(this.node.children);
       if (circles.indexOf(ev.target) >= 0) {
-      	console.log(circles.indexOf(ev.target));
-
-        this.purgeCircle(ev.target, circles.indexOf(ev.target));
-
+        this.purgeCircle(circles.indexOf(ev.target));
       } else {
       	const x = ev.x;
       	const y = ev.y;
@@ -38,13 +35,11 @@ class Field {
         this.moving = true;
       }
 		})
-		this.node.addEventListener('mousemove', (ev) => {
-      
-		})
+
 		this.node.addEventListener('mouseup', (ev) => {
       if (this.moving) {
         this.moving = false;
-        console.log([ev.x, ev.y]);
+       
         const x = ev.x - this.clickCoords[0];
         const y = ev.y - this.clickCoords[1];
 
@@ -52,7 +47,7 @@ class Field {
         const newY = parseInt(this.movingEl.style.top ) + y;
 
         const intersection = this.getIntersection([ev.x, ev.y], this.radius/2, this.movingIdx);
-        console.log(intersection)
+        
         if (intersection === false) {
           this.movingEl.style.left = newX + 'px';
           this.movingEl.style.top = newY + 'px';
@@ -64,20 +59,31 @@ class Field {
           const movingColorRGB = this.decodeHex(this.list[this.movingIdx].color);
           const intersColorRGB = this.decodeHex(this.list[intersection].color);
           const newColor = this.generateColor(movingColorRGB, intersColorRGB);
-          console.log(newColor);
-
+    
           this.movingEl.style.background = newColor;
+          this.movingEl.style.left = newX + 'px';
+          this.movingEl.style.top = newY + 'px';
+
+
           this.list[this.movingIdx].x = newX + (this.radius / 2);
           this.list[this.movingIdx].y = newY + (this.radius / 2);
+          this.purgeCircle(intersection);
 
         }
       }
 		})
 	}
 
-  purgeCircle(node, idx) {
-    this.node.removeChild(node);
+  purgeCircle(idx) {
+    this.node.removeChild(this.node.children[idx]);
     this.list.splice(idx, 1);
+  }
+
+  newRadius(rad1, rad2) {
+    const radius1 = this.list[rad1].radius;
+    const radius2 = this.list[rad2].radius;
+
+    return (radius1 + radius2) / 2;
   }
 
 	init(numCircles, radius) {
@@ -90,7 +96,6 @@ class Field {
 		}
 		for (let el in this.list) {
 			this.node.appendChild(this.renderCircle(this.list[el]));
-			console.log(this.list[el])
 		}
 	}
 
@@ -154,7 +159,7 @@ class Field {
     while (count < this.list.length ) {
       if (count !== escape) {
         const distance = this.getDistance(coords, [this.list[count].x, this.list[count].y]);
-        console.log(distance);
+
         if (distance < margin) {
           intersectIdx = count;
           break;
@@ -171,7 +176,7 @@ class Field {
     while (count < this.list.length ) {
       if (count !== escape) {
         const distance = this.getDistance(coords, [this.list[count].x, this.list[count].y]);
-        console.log(distance);
+
         if (distance < this.radius) {
           letDraw = false;
           break;
@@ -205,7 +210,7 @@ class Circle {
 	}
 }
 n = new Field('.field');
-n.init(2, n.radius)
+n.init(10, n.radius)
 //m = new Circle([250, 150], 50, '#000');
 
 
